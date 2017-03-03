@@ -148,6 +148,7 @@ def gdisconnect():
         del login_session['access_token']
         del login_session['gplus_id']
         del login_session['username']
+        del login_session['user_id']
         del login_session['email']
         del login_session['picture']
         response = make_response(json.dumps('Successfully disconnected.'), 200)
@@ -184,7 +185,11 @@ def restaurantsJSON():
 @app.route('/restaurant/')
 def showRestaurants():
   restaurants = session.query(Restaurant).order_by(asc(Restaurant.name))
-  return render_template('restaurants.html', restaurants = restaurants)
+
+  if 'user_id' in login_session:
+    return render_template('restaurants.html', restaurants = restaurants)
+  else:
+    return render_template('publicrestaurants.html', restaurants = restaurants)
 
 #Create a new restaurant
 @app.route('/restaurant/new/', methods=['GET','POST'])

@@ -3,7 +3,7 @@ app = Flask(__name__)
 
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import sessionmaker
-from database_setup import Base, Restaurant, MenuItem
+from database_setup import Base, Restaurant, MenuItem, User
 from flask import session as login_session, make_response
 from oauth2client.client import flow_from_clientsecrets, FlowExchangeError
 import random, string
@@ -187,7 +187,7 @@ def newRestaurant():
       return redirect('/login')
 
   if request.method == 'POST':
-      newRestaurant = Restaurant(name = request.form['name'])
+      newRestaurant = Restaurant(name = request.form['name'], user_id = login_session['user_id'])
       session.add(newRestaurant)
       flash('New Restaurant %s Successfully Created' % newRestaurant.name)
       session.commit()
@@ -244,7 +244,7 @@ def newMenuItem(restaurant_id):
 
   restaurant = session.query(Restaurant).filter_by(id = restaurant_id).one()
   if request.method == 'POST':
-      newItem = MenuItem(name = request.form['name'], description = request.form['description'], price = request.form['price'], course = request.form['course'], restaurant_id = restaurant_id)
+      newItem = MenuItem(name = request.form['name'], description = request.form['description'], price = request.form['price'], course = request.form['course'], restaurant_id = restaurant_id, user_id = login_session['user_id'])
       session.add(newItem)
       session.commit()
       flash('New Menu %s Item Successfully Created' % (newItem.name))
@@ -293,7 +293,27 @@ def deleteMenuItem(restaurant_id,menu_id):
     else:
         return render_template('deleteMenuItem.html', item = itemToDelete)
 
+def createUser(login_session):
+    newUser = User(
+        name=login_session['name'],
+        email=login_session['email'],
+        picture=login_session['picture'])
 
+    session.add(newUser)
+    session.commit()
+    user = session.query(User).filter_by(email=login_session['email']).one()
+    return user.id
+
+def getUserInfo(user_id):
+    user = session.query(User).filter_by(id=user_id).one()
+    return user
+
+def getUserId(email):
+    try:
+        user = session.query(User).filter_by(email=login_session['email']).one()
+        return user.id
+    except:
+        return None
 
 
 if __name__ == '__main__':

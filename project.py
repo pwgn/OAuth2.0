@@ -19,7 +19,7 @@ APPLICATION_NAME = 'Restaurant Menu App'
 
 
 #Connect to Database and create database session
-engine = create_engine('sqlite:///restaurantmenu.db')
+engine = create_engine('sqlite:///restaurantmenuwithusers.db')
 Base.metadata.bind = engine
 
 DBSession = sessionmaker(bind=engine)
@@ -238,9 +238,15 @@ def deleteRestaurant(restaurant_id):
 def showMenu(restaurant_id):
     restaurant = session.query(Restaurant).filter_by(id = restaurant_id).one()
     items = session.query(MenuItem).filter_by(restaurant_id = restaurant_id).all()
-    return render_template('menu.html', items = items, restaurant = restaurant)
 
+    restaurant_creator_id = restaurant.user_id
+    restaurant_creator = getUserInfo(restaurant_creator_id)
 
+    # Render public menu if user is not owner of the menu
+    if 'user_id' in login_session and restaurant_creator_id == login_session['user_id']:
+        return render_template('menu.html', items = items, restaurant = restaurant)
+    else:
+        return render_template('publicmenu.html', creator = restaurant_creator, items = items, restaurant = restaurant)
 
 #Create a new menu item
 @app.route('/restaurant/<int:restaurant_id>/menu/new/',methods=['GET','POST'])
@@ -301,7 +307,7 @@ def deleteMenuItem(restaurant_id,menu_id):
 
 def createUser(login_session):
     newUser = User(
-        name=login_session['name'],
+        name=login_session['username'],
         email=login_session['email'],
         picture=login_session['picture'])
 
